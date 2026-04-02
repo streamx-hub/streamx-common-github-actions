@@ -1,5 +1,17 @@
+# IDEs
 .idea/
 .vscode/
-.claude/
 *.iml
+*.swp
+
+# AI tools
+.claude/
+.cursor/
+.windsurf/
+.aider*
+.codeium/
+.continue/
+
+# OS
 .DS_Store
+Thumbs.db
