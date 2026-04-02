@@ -27,7 +27,7 @@ add following step to your GH workflow.
 
 ```yaml
       - name: Release Jira Version
-        uses: streamx-dev/streamx-common-github-actions/.github/actions/jira-release@main
+        uses: streamx-hub/streamx-common-github-actions/.github/actions/jira-release@main
         with:
           atlassianCloudUser: ${{ secrets.ATLASSIAN_CLOUD_USER }}
           atlassianCloudApiKey: ${{ secrets.ATLASSIAN_CLOUD_APIKEY }}
@@ -36,7 +36,7 @@ add following step to your GH workflow.
           releaseNamePrefix: ${{ github.event.repository.name }}
 ```
 
-Secrets `ATLASSIAN_CLOUD_USER`, `ATLASSIAN_CLOUD_APIKEY`, and `ATLASSIAN_CLOUD_DOMAIN` are defined at the StreamX-dev organization level 
+Secrets `ATLASSIAN_CLOUD_USER`, `ATLASSIAN_CLOUD_APIKEY`, and `ATLASSIAN_CLOUD_DOMAIN` are defined at the StreamX-hub organization level 
 and should be accessible for all repositories without any additional configuration.
 
 The `ATLASSIAN_CLOUD_JIRA_PROJECT` variable is also defined at the organizational level. 
@@ -44,64 +44,57 @@ The `ATLASSIAN_CLOUD_JIRA_PROJECT` variable is also defined at the organizationa
 
 ## Create StreamX Connector GitHub Action
 
-StreamX Connector GitHub is a Quarkus GitHub Action project that allows syncing GitHub
-changes with StreamX.
+StreamX GitHub Connector is a Quarkus GitHub Action project that allows syncing GitHub
+changes with StreamX using CloudEvents.
 
 Detail information please check [Quarkus GitHub Action](https://docs.quarkiverse.io/quarkus-github-action/dev/index.html) documentation.
 
-### Actions
-* publish - Publishes the selected ingestion data to StreamX.
-* unpublish - Unpublishes the selected ingestion data from StreamX.
-* sync - Dynamically selects and executes the appropriate ingestion action based on the source detection mechanism.
+### Modes
+
+The action operates in two modes:
+
+* **Source-provider mode** - Uses `event-type` + `source-provider` to detect and ingest content from the workspace. Suitable for batch operations and pull request synchronization.
+* **Subject mode** - Uses `event-type` + `subject` for simple single-event ingestion without source detection.
 
 ### Usage
 ```yaml
-- uses: streamx-dev/streamx-common-github-actions/.github/actions/connector-github@v1
+- uses: streamx-hub/streamx-common-github-actions/.github/actions/connector-github@v1
   with:
-    # Name of the GitHub action (e.g., sync, publish, unpublish).
-    # Value required.
-    action:
-      
-    # Name of the StreamX ingestion channel. 
-    # Important is that given value is supported by your StreamX instance. For validation check 
-    # at GET ${streamx-ingestion-url}/ingestion/v1/channels
+    # CloudEvents event type (e.g., com.streamx.blueprints.web-resource.published.v1).
     #
     # Value required.
-    channel:
-      
-    # StreamX ingestion api endpoint URL (e.g., https://ingestion.streamx.dev).
+    event-type:
+
+    # CloudEvents event type used for deletion events (e.g., com.streamx.blueprints.web-resource.unpublished.v1).
+    deleted-event-type:
+
+    # StreamX ingestion API endpoint URL (e.g., https://ingestion.streamx.com).
     #
     # Value required.
     streamx-ingestion-url:
-      
+
     # StreamX ingestion API authorisation token.
     streamx-ingestion-token:
-      
+
     # Specifies the provider name used to determine the ingestion data source.
     # Check section 'Ingestion data source provider' for details.
     #
-    # Value required only with action sync, publish.
+    # Required in source-provider mode.
     source-provider:
+
+    # CloudEvents subject. Alternative to source-provider for simple single-event ingestion.
+    #
+    # Required in subject mode.
+    subject:
 
     # Specifies the root directory for ingestion data lookup. Defaults to github.workspace.
     workspace:
-
-    # Defines ingestion message key value property.
-    key:
-      
-    # Specifies the sx:type metadata field within the ingestion message properties.
-    type:     
-      
-    # Specifies the indexable metadata boolean value (true / false) within the ingestion message properties.
-    #
-    # Default value 'false'.
-    indexable:
 
     # Defines Ant-style path patterns for filtering ingestion data (e.g., styles/*.css, scripts/*.js).
     #
     # Value required only with a specific source provider. Check section 'Ingestion data source provider' for details.
     include-patterns:
-      
+
     # URL property from where resource data is downloaded and used as ingestion data.
     #
     # Value required only with a specific source provider. Check section 'Ingestion data source provider' for details.
@@ -111,7 +104,7 @@ Detail information please check [Quarkus GitHub Action](https://docs.quarkiverse
     # Displays detailed output in the console, useful for troubleshooting and diagnostics.
     #
     # Default value 'false'.
-    debug-enabled:    
+    debug-enabled:
 ```
 
 #### Ingestion data source provider
@@ -124,10 +117,8 @@ that matches given `include-patterns` configuration.
 ```yaml
   with:
     source-provider: BatchSourceProvider
-    # Value required for schema type detection for given channel configuration
     streamx-ingestion-url:
-    # Value required for schema type detection 
-    channel: 
+    event-type:
     # Value required for limiting number of the resources
     include-patterns:
 ```
@@ -139,14 +130,10 @@ This data source provider allows to download data from external services.
 ```yaml
   with:
     source-provider: ExternalSourceProvider
-    # Value required for schema type detection for given channel configuration
     streamx-ingestion-url:
-    # Value required for schema type detection 
-    channel:
+    event-type:
     # URL property from where resource data is downloaded and used as ingestion data.
     external-resource-url:
-    # Ingestion message key value property.
-    key:
 ```
 
 * *PullRequestDiffSourceProvider*
@@ -159,14 +146,13 @@ For accurate diff detection, all changelog data must be loaded during the checko
 `fetch-depth: 0`
 
 ```yaml
-  with: 
+  with:
     source-provider: PullRequestDiffSourceProvider
-    # Value required for schema type detection for given channel configuration
     streamx-ingestion-url:
-    # Value required for schema type detection 
-    channel:
+    event-type:
+    deleted-event-type:
     # Value required for limiting number of the resources
-    include-patterns:    
+    include-patterns:
 ```
 
 ### Scenarios
@@ -189,16 +175,15 @@ on:
         with:
           fetch-depth: 0
       - name: Run sync with StreamX
-        uses: streamx-dev/streamx-common-github-actions/.github/actions/connector-github@v1
+        uses: streamx-hub/streamx-common-github-actions/.github/actions/connector-github@v1
         with:
-          action: sync
-          channel: web-resources
+          event-type: com.streamx.blueprints.web-resource.published.v1
+          deleted-event-type: com.streamx.blueprints.web-resource.unpublished.v1
           source-provider: PullRequestDiffSourceProvider
-          type: 'web-resource/static'
           include-patterns: '[\"styles/*.css\", \"scripts/*.js\"]'
           streamx-ingestion-token: ${{ secrets.STREAMX_INGESTION_TOKEN }}
           streamx-ingestion-url: ${{ vars.STREAMX_INGESTION_URL }}
-          
+
 ```
 
 #### Publish with StreamX all CSS and JS web resources
@@ -220,16 +205,40 @@ on:
         uses: actions/checkout@v4
 
       - name: Run full sync with StreamX
-        uses: streamx-dev/streamx-common-github-actions/.github/actions/connector-github@v1
+        uses: streamx-hub/streamx-common-github-actions/.github/actions/connector-github@v1
         with:
-          action: publish
-          channel: web-resources
+          event-type: com.streamx.blueprints.web-resource.published.v1
           source-provider: BatchSourceProvider
-          type: 'web-resource/static'
           include-patterns: '[\"styles/*.css\", \"scripts/*.js\"]'
           streamx-ingestion-token: ${{ secrets.STREAMX_INGESTION_TOKEN }}
-          streamx-ingestion-url: ${{ vars.STREAMX_INGESTION_URL }}        
-          
+          streamx-ingestion-url: ${{ vars.STREAMX_INGESTION_URL }}
+
+```
+
+#### Unpublish a specific resource from StreamX
+
+Use subject mode when you need to send a single event without scanning files — for example,
+to unpublish a specific resource by its key. This is useful for manual content removal
+triggered via `workflow_dispatch`, where you already know exactly which resource to act on.
+
+```yaml
+on:
+  workflow_dispatch:
+    inputs:
+      resource_key:
+        description: "Resource key to unpublish (e.g., /styles/main.css)"
+        required: true
+        type: string
+  unpublish-resource:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Unpublish resource from StreamX
+        uses: streamx-hub/streamx-common-github-actions/.github/actions/connector-github@v1
+        with:
+          event-type: com.streamx.blueprints.web-resource.unpublished.v1
+          subject: ${{ inputs.resource_key }}
+          streamx-ingestion-token: ${{ secrets.STREAMX_INGESTION_TOKEN }}
+          streamx-ingestion-url: ${{ vars.STREAMX_INGESTION_URL }}
 ```
 
 ### Enable dependency cache on GitHub workflows

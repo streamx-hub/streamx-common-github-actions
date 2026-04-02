@@ -1,31 +1,25 @@
-name: 'streamx-connector-github'
+name: 'streamx-github-connector'
 inputs:
   streamx-ingestion-url:
-    description: 'StreamX ingestion API endpoint URL (e.g., https://ingestion.streamx.dev).'
+    description: 'StreamX ingestion API endpoint URL (e.g., https://ingestion.streamx.com).'
     required: true
   streamx-ingestion-token:
     description: 'StreamX ingestion API authorisation token.'
     required: false
-  action:
-    description: 'Name of the GH action (e.g., sync, publish, unpublish).'
+  event-type:
+    description: 'CloudEvents event type (e.g., com.streamx.blueprints.web-resource.published.v1).'
     required: true
-  channel:
-    description: 'Name of the StreamX ingestion channel.'
-    required: true
+  deleted-event-type:
+    description: 'CloudEvents event type used for deletion events (e.g., com.streamx.blueprints.web-resource.unpublished.v1).'
+    required: false
   source-provider:
     description: 'Specifies the provider name used to determine the ingestion data source.'
-    required: true
+    required: false
   workspace:
     description: 'Specifies the root directory for ingestion data lookup. Defaults to github.workspace.'
     required: false
-  key:
-    description: 'Defines ingestion message key value property. Required only with unpublish action.'
-    required: false
-  type:
-    description: 'Specifies the sx:type metadata field within the ingestion message properties.'
-    required: false
-  indexable:
-    description: 'Specifies the indexable metadata field within the ingestion message properties.'
+  subject:
+    description: 'CloudEvents subject. Alternative to source-provider for simple single-event ingestion.'
     required: false
   include-patterns:
     description: 'Defines Ant-style path patterns for filtering ingestion data (e.g., styles/*.css, scripts/*.js).'
@@ -44,7 +38,7 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Download streamx-connector-github snapshot dependency
+    - name: Download streamx-github-connector snapshot dependency
       if: inputs.snapshot-artifactory-token != ''
       shell: bash
       run: |
@@ -100,7 +94,7 @@ runs:
         if [ -f "$output_filename" ]; then
           rm "$output_filename";
         fi
-        jbang --java 21 --fresh --repos 'streamx-maven-public-releases=https://europe-west1-maven.pkg.dev/streamx-releases/streamx-maven-public-releases/' --repos 'mavencentral' --repos 'streamx-maven-snapshots=https://europe-west1-maven.pkg.dev/streamx-releases/streamx-maven-snapshots/' dev.streamx:streamx-connector-github:1.0.4-SNAPSHOT &> "$output_filename"
+        jbang --java 21 --fresh --repos 'streamx-maven-public-releases=https://europe-west1-maven.pkg.dev/streamx-releases/streamx-maven-public-releases/' --repos 'mavencentral' --repos 'streamx-maven-snapshots=https://europe-west1-maven.pkg.dev/streamx-releases/streamx-maven-snapshots/' com.streamx:streamx-github-connector:2.0.0-SNAPSHOT &> "$output_filename"
 
         errorsCount=$(cat "$output_filename" | grep -oi "::error" | wc -l);
         if ((errorsCount > 0)); then
