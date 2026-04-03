@@ -12,6 +12,9 @@ inputs:
   deleted-event-type:
     description: 'CloudEvents event type used for deletion events (e.g., com.streamx.blueprints.web-resource.unpublished.v1).'
     required: false
+  event-data:
+    description: 'Additional JSON fields to include in the CloudEvent data object (e.g., {"type": "web-resource/static"}).'
+    required: false
   source-provider:
     description: 'Specifies the provider name used to determine the ingestion data source.'
     required: false
