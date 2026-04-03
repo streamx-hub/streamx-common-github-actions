@@ -97,7 +97,7 @@ runs:
         if [ -f "$output_filename" ]; then
           rm "$output_filename";
         fi
-        jbang --java 21 --fresh --repos 'streamx-maven-public-releases=https://europe-west1-maven.pkg.dev/streamx-releases/streamx-maven-public-releases/' --repos 'mavencentral' --repos 'streamx-maven-snapshots=https://europe-west1-maven.pkg.dev/streamx-releases/streamx-maven-snapshots/' com.streamx:streamx-github-connector:2.0.0-SNAPSHOT &> "$output_filename"
+        jbang --java 21 --fresh --repos 'streamx-maven-public-releases=https://europe-west1-maven.pkg.dev/streamx-releases/streamx-maven-public-releases/' --repos 'mavencentral' --repos 'streamx-maven-snapshots=https://europe-west1-maven.pkg.dev/streamx-releases/streamx-maven-snapshots/' com.streamx:streamx-github-connector:2.0.0 &> "$output_filename"
 
         errorsCount=$(cat "$output_filename" | grep -oi "::error" | wc -l);
         if ((errorsCount > 0)); then
